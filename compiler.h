@@ -5,6 +5,9 @@
 #ifndef LOX_COMPILER_H
 #define LOX_COMPILER_H
 
-void compile(const char *source);
+#include "common.h"
+#include "chunk.h"
+
+bool compile(const char *source, Chunk *chunk);
 
 #endif //LOX_COMPILER_H
