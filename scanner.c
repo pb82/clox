@@ -194,6 +194,9 @@ static bool match(char expected) {
 Token scanToken() {
     skipWhitespace();
     scanner.start = scanner.current;
+
+    if (isAtEnd()) return makeToken(TOKEN_EOF);
+
     char c = advance();
 
     if (isAlpha(c)) return identifier();
