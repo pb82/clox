@@ -326,6 +326,9 @@ static int resolveLocal(Compiler *compiler, Token *name) {
     for (int i = compiler->localCount - 1; i >= 0; i--) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) {
+            if (local->depth == -1) {
+                error("Can't read local variable in its own initializer.");
+            }
             return i;
         }
     }
@@ -359,7 +362,6 @@ static void addLocal(Token name) {
     Local *local = &current->locals[current->localCount++];
     local->name = name;
     local->depth = -1;
-    local->depth = current->scopeDepth;
 }
 
 static uint8_t parseVariable(const char *errorMessage) {
