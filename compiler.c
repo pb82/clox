@@ -72,6 +72,8 @@ static void literal(bool canAssign);
 
 static void string(bool canAssign);
 
+static void and_(bool canAssign);
+
 static void statement();
 
 static void declaration();
@@ -117,7 +119,7 @@ ParseRule rules[] = {
         [TOKEN_IDENTIFIER] = {variable, NULL, PREC_NONE},
         [TOKEN_STRING] = {string, NULL, PREC_NONE},
         [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
-        [TOKEN_AND] = {NULL, NULL, PREC_NONE},
+        [TOKEN_AND] = {NULL, and_, PREC_NONE},
         [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
         [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
         [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
@@ -276,6 +278,10 @@ static void endScope() {
 static void number(bool canAssign) {
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
+}
+
+static void and_(bool canAssign) {
+
 }
 
 static void string(bool canAssign) {
@@ -440,8 +446,16 @@ static void ifStatement() {
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
     int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+
     statement();
+    int elseJmp = emitJump(OP_JUMP);
+
     patchJump(thenJump);
+    emitByte(OP_POP);
+
+    if (match(TOKEN_ELSE)) statement();
+    patchJump(elseJmp);
 }
 
 static void printStatement() {
