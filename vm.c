@@ -78,6 +78,16 @@ static InterpretResult run() {
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define READ_SHORT() (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8) | vm.ip[-1]))
+#define INTEGER_OP(valueType, op)                           \
+    do {                                                    \
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {   \
+            runtimeError("Operands must be numbers.");      \
+            return INTERPRET_RUNTIME_ERROR;                 \
+        }                                                   \
+        int b = (int) AS_NUMBER(pop());                     \
+        int a = (int) AS_NUMBER(pop());                     \
+        push(valueType(a op b));                            \
+    } while(false)
 #define BINARY_OP(valueType, op)                            \
     do {                                                    \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {   \
@@ -136,6 +146,9 @@ static InterpretResult run() {
                 break;
             case OP_DIVIDE:
                 BINARY_OP(NUMBER_VAL, /);
+                break;
+            case OP_MODULO:
+                INTEGER_OP(NUMBER_VAL, %);
                 break;
             case OP_NEGATE: {
                 if (!IS_NUMBER(peek(0))) {
@@ -225,6 +238,7 @@ static InterpretResult run() {
 #undef READ_STRING
 #undef READ_SHORT
 #undef BINARY_OP
+#undef INTEGER_OP
 }
 
 InterpretResult interpret(const char *source) {
