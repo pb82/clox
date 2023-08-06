@@ -80,6 +80,8 @@ static void statement();
 
 static void declaration();
 
+static void whileStatement();
+
 static void variable(bool canAssign);
 
 static void block();
@@ -91,6 +93,8 @@ static void endScope();
 static void declareVariable();
 
 static void addLocal(Token name);
+
+static void emitLoop(int loopStart);
 
 static uint8_t identifierConstant(Token *name);
 
@@ -503,9 +507,37 @@ static void statement() {
         beginScope();
         block();
         endScope();
+    } else if (match(TOKEN_WHILE)) {
+        whileStatement();
     } else {
         expressionStatement();
     }
+}
+
+static void whileStatement() {
+    int loopStart = currentChunk()->count;
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after while.");
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+
+    statement();
+    emitLoop(loopStart);
+
+    patchJump(exitJump);
+    emitByte(OP_POP);
+}
+
+static void emitLoop(int loopStart) {
+    emitByte(OP_LOOP);
+
+    int offset = currentChunk()->count - loopStart + 2;
+    if (offset > UINT16_MAX) error("Loop body too large.");
+
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
 }
 
 static void unary(bool canAssign) {
