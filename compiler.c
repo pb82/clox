@@ -102,6 +102,8 @@ static bool identifiersEqual(Token *a, Token *b);
 
 static int resolveLocal(Compiler *compiler, Token *name);
 
+static void forStatement();
+
 ParseRule rules[] = {
         [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_NONE},
         [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
@@ -509,9 +511,55 @@ static void statement() {
         endScope();
     } else if (match(TOKEN_WHILE)) {
         whileStatement();
+    } else if (match(TOKEN_FOR)) {
+        forStatement();
     } else {
         expressionStatement();
     }
+
+}
+
+static void forStatement() {
+    beginScope();
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after for.");
+    if (match(TOKEN_SEMICOLON)) {
+        // No initializer
+    } else if (match(TOKEN_VAR)) {
+        varDeclaration();
+    } else {
+        expressionStatement();
+    }
+
+    int loopStart = currentChunk()->count;
+    int exitJump = -1;
+    if (!match(TOKEN_SEMICOLON)) {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after for loop condition.");
+
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emitByte(OP_POP);
+    }
+
+    if (!match(TOKEN_SEMICOLON)) {
+        int bodyJump = emitJump(OP_JUMP);
+        int incrementStart = currentChunk()->count;
+        expression();
+        emitByte(OP_POP);
+        consume(TOKEN_RIGHT_PAREN, "Expect ')' after for loop increment.");
+        emitLoop(loopStart);
+        loopStart = incrementStart;
+        patchJump(bodyJump);
+    }
+
+    statement();
+    emitLoop(loopStart);
+
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP);
+    }
+
+    endScope();
 }
 
 static void whileStatement() {
