@@ -26,6 +26,12 @@ static void freeObject(Obj *object) {
             FREE(ObjString, string);
             break;
         }
+        case OBJ_FUNCTION: {
+            ObjFunction *function = (ObjFunction *) object;
+            freeChunk(&function->chunk);
+            FREE(ObjFunction, object);
+            break;
+        }
     }
 }
 
@@ -33,7 +39,7 @@ void freeObjects() {
     Obj *object = vm.objects;
     while (object != NULL) {
         Obj *next = object->next;
-        free(object);
+        freeObject(object);
         object = next;
     }
 }
