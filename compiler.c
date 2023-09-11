@@ -16,6 +16,8 @@
 
 #endif
 
+#define UINT8_COUNT (UINT8_MAX + 1)
+
 typedef struct {
     Token current;
     Token previous;
@@ -54,8 +56,6 @@ typedef enum {
     TYPE_FUNCTION,
     TYPE_SCRIPT,
 } FunctionType;
-
-#define UINT8_COUNT (UINT8_MAX + 1)
 
 typedef struct Compiler {
     ObjFunction *function;

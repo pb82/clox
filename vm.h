@@ -10,7 +10,7 @@
 #include "object.h"
 
 #define FRAMES_MAX 64
-#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+#define STACK_MAX (FRAMES_MAX * (UINT8_MAX + 1))
 
 typedef struct {
     ObjFunction *function;
@@ -37,9 +37,13 @@ typedef enum {
 extern VM vm;
 
 void initVM();
+
 void freeVM();
+
 InterpretResult interpret(const char *source);
+
 void push(Value value);
+
 Value pop();
 
 #endif //LOX_VM_H
